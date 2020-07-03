@@ -11,7 +11,6 @@ import com.redhat.emergency.response.model.Mission;
 import com.redhat.emergency.response.repository.MissionRepository;
 import com.redhat.emergency.response.sink.EventSink;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -43,32 +42,24 @@ public class MissionCommandSource {
         return Uni.createFrom().item(missionCommandMessage)
                 .onItem().apply(mcm -> accept(missionCommandMessage.getPayload()))
                 .onItem().apply(o -> o.flatMap(j -> validate(j.getJsonObject("body"))).orElse(null))
-                .onItem().ifNotNull().produceUni(this::addRoute)
-                .onItem().ifNotNull().produceUni(this::addToRepositoryAsync)
+                .onItem().ifNotNull().apply(this::addRoute)
+                .onItem().ifNotNull().apply(this::addToRepository)
                 .onItem().ifNotNull().produceUni(this::publishMissionStartedEventAsync)
                 .onItem().apply(m -> missionCommandMessage.ack());
     }
 
-    private Uni<Mission> addRoute(Mission mission) {
-        return Uni.createFrom().item(() -> mission, m -> {
-            m.getSteps().addAll(
-                    routePlanner.getDirections(m.responderLocation(), m.destinationLocation(), m.incidentLocation()));
-            return m;
-        }).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    private Mission addRoute(Mission mission) {
+        mission.getSteps().addAll(routePlanner.getDirections(mission.responderLocation(), mission.destinationLocation(), mission.incidentLocation()));
+        return mission;
     }
 
-    private Uni<Mission> addToRepositoryAsync(Mission mission) {
-        return Uni.createFrom().item(() -> mission, m -> {
-            repository.add(m);
-            return m;
-        }).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    private Mission addToRepository(Mission mission) {
+        repository.add(mission);
+        return mission;
     }
 
     private Uni<Mission> publishMissionStartedEventAsync(Mission mission) {
-        return Uni.createFrom().item(() -> mission, m -> {
-            eventSink.missionStarted(m);
-            return m;
-        }).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+        return eventSink.missionStarted(mission).map(v -> mission);
     }
 
     private Optional<JsonObject> accept(String messageAsJson) {

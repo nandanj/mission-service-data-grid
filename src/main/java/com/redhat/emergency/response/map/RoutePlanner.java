@@ -10,8 +10,8 @@ import com.redhat.emergency.response.model.MissionStep;
 @ApplicationScoped
 public class RoutePlanner {
 
-    public List<MissionStep> getDirections(Location origin, Location destination, Location waypoint) {
 
+    public List<MissionStep> getDirections(Location origin, Location destination, Location waypoint) {
         return new ArrayList<>();
     }
 
