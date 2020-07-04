@@ -1,5 +1,6 @@
 package com.redhat.emergency.response.repository;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -14,4 +15,7 @@ public class MissionRepository {
         repository.put(mission.getKey(), mission);
     }
 
+    public Optional<Mission> get(String key) {
+        return Optional.ofNullable(repository.get(key));
+    }
 }
