@@ -90,6 +90,7 @@ public class ResponderUpdateLocationSourceTest {
         verify(repository).get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64");
         verify(eventSink, never()).missionPickedUp(any());
         verify(eventSink, never()).missionCompleted(any());
+        verify(eventSink, never()).responderCommand(any(), any(), any(), any());
         verify(repository).add(mission);
     }
 
@@ -129,6 +130,7 @@ public class ResponderUpdateLocationSourceTest {
         verify(repository).get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64");
         verify(eventSink).missionPickedUp(mission);
         verify(eventSink, never()).missionCompleted(any());
+        verify(eventSink, never()).responderCommand(any(), any(), any(), any());
         verify(repository).add(mission);
     }
 
@@ -156,6 +158,8 @@ public class ResponderUpdateLocationSourceTest {
 
         when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Optional.of(mission));
         when(eventSink.missionCompleted(any(Mission.class))).thenReturn(Uni.createFrom().emitter(emitter -> emitter.complete(null)));
+        when(eventSink.responderCommand(any(Mission.class), any(BigDecimal.class), any(BigDecimal.class), any(Boolean.class)))
+                .thenReturn(Uni.createFrom().emitter(emitter -> emitter.complete(null)));
 
         Uni<CompletionStage<Void>> uni = source.process(toRecord("incident12364", payload));
         uni.await().indefinitely();
@@ -168,6 +172,7 @@ public class ResponderUpdateLocationSourceTest {
         verify(repository).get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64");
         verify(eventSink, never()).missionPickedUp(any());
         verify(eventSink).missionCompleted(mission);
+        verify(eventSink).responderCommand(mission, new BigDecimal("34.1701"), new BigDecimal("-77.9482"), false);
         verify(repository).add(mission);
     }
 
