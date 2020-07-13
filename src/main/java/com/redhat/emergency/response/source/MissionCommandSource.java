@@ -42,12 +42,13 @@ public class MissionCommandSource {
 
         return Uni.createFrom().item(missionCommandMessage)
                 .onItem().apply(mcm -> accept(missionCommandMessage.getPayload()))
-                .onItem().apply(o -> o.flatMap(j -> validate(j.getJsonObject("body"))).orElse(null))
-                .onItem().ifNotNull().apply(m -> m.status(MissionStatus.CREATED))
-                .onItem().ifNotNull().apply(this::addRoute)
-                .onItem().ifNotNull().apply(this::addToRepository)
-                .onItem().ifNotNull().produceUni(this::publishMissionStartedEventAsync)
-                .onItem().apply(m -> missionCommandMessage.ack());
+                .onItem().apply(o -> o.flatMap(j -> validate(j.getJsonObject("body"))).orElseThrow(() -> new IllegalStateException("Message ignored")))
+                .onItem().apply(m -> m.status(MissionStatus.CREATED))
+                .onItem().apply(this::addRoute)
+                .onItem().apply(this::addToRepository)
+                .onItem().produceUni(this::publishMissionStartedEventAsync)
+                .onItem().apply(m -> missionCommandMessage.ack())
+                .onFailure().recoverWithItem(t -> missionCommandMessage.ack());
     }
 
     private Mission addRoute(Mission mission) {
