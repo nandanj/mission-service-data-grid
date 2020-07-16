@@ -26,22 +26,28 @@ public class MissionRepository {
     @ConfigProperty(name = "infinispan.cache.name.mission", defaultValue = "mission")
     String cacheName;
 
+    @ConfigProperty(name = "infinispan.cache.create.lazy", defaultValue = "false")
+    boolean lazy;
+
     @Inject
     RemoteCacheManager cacheManager;
 
-    RemoteCache<String, String> missionCache;
+    volatile RemoteCache<String, String> missionCache;
 
     void onStart(@Observes StartupEvent e) {
-        log.info("Creating remote cache");
-        missionCache = initCache();
+        // do not initialize the cache at startup when remote cache is not available, e.g. in QuarkusTests
+        if (!lazy) {
+            log.info("Creating remote cache");
+            missionCache = initCache();
+        }
     }
 
     public void add(Mission mission) {
-        missionCache.put(mission.getKey(), mission.toJson());
+        getCache().put(mission.getKey(), mission.toJson());
     }
 
     public Optional<Mission> get(String key) {
-        return Optional.ofNullable(missionCache.get(key)).map(s -> {
+        return Optional.ofNullable(getCache().get(key)).map(s -> {
             Mission mission = null;
             try {
                 mission = Json.decodeValue(s, Mission.class);
@@ -53,7 +59,7 @@ public class MissionRepository {
     }
 
     public List<Mission> getAll() {
-        return missionCache.values().stream().map(s -> {
+        return getCache().values().stream().map(s -> {
             Mission mission = null;
             try {
                 mission = Json.decodeValue(s, Mission.class);
@@ -65,11 +71,11 @@ public class MissionRepository {
     }
 
     public void clear() {
-        missionCache.clear();
+        getCache().clear();
     }
 
     public List<Mission> getByResponderId(String responderId) {
-        return missionCache.values().stream().map(s -> {
+        return getCache().values().stream().map(s -> {
             Mission mission = null;
             try {
                 mission = Json.decodeValue(s, Mission.class);
@@ -78,6 +84,18 @@ public class MissionRepository {
             }
             return mission;
         }).filter(Objects::nonNull).filter(m -> m.getResponderId().equals(responderId)).collect(Collectors.toList());
+    }
+
+    private RemoteCache<String, String> getCache() {
+        RemoteCache<String, String> cache = missionCache;
+        if (cache == null) {
+            synchronized(this) {
+                if (missionCache == null) {
+                    missionCache = cache = initCache();
+                }
+            }
+        }
+        return cache;
     }
 
     private RemoteCache<String, String> initCache() {
