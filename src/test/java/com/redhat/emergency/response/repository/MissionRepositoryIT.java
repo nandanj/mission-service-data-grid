@@ -45,9 +45,9 @@ public class MissionRepositoryIT {
 
         Mission mission = json.mapTo(Mission.class);
 
-        missionRepository.add(mission);
+        missionRepository.add(mission).await().indefinitely();
 
-        Optional<Mission> fromCache = missionRepository.get(mission.getKey());
+        Optional<Mission> fromCache = missionRepository.get(mission.getKey()).await().indefinitely();
 
         assertThat(fromCache.isPresent(), is(true));
         assertThat(fromCache.get().getId(), notNullValue());
@@ -92,10 +92,10 @@ public class MissionRepositoryIT {
 
         Mission mission2 = json2.mapTo(Mission.class);
 
-        missionRepository.add(mission);
-        missionRepository.add(mission2);
+        missionRepository.add(mission).await().indefinitely();
+        missionRepository.add(mission2).await().indefinitely();
 
-        List<Mission> fromCache = missionRepository.getAll();
+        List<Mission> fromCache = missionRepository.getAll().await().indefinitely();
 
         assertThat(fromCache.size(), equalTo(2));
     }
@@ -105,7 +105,7 @@ public class MissionRepositoryIT {
 
         missionRepository.clear();
 
-        List<Mission> fromCache = missionRepository.getAll();
+        List<Mission> fromCache = missionRepository.getAll().await().indefinitely();
 
         assertThat(fromCache.size(), equalTo(0));
     }
@@ -137,10 +137,10 @@ public class MissionRepositoryIT {
 
         Mission mission2 = json2.mapTo(Mission.class);
 
-        missionRepository.add(mission);
-        missionRepository.add(mission2);
+        missionRepository.add(mission).await().indefinitely();
+        missionRepository.add(mission2).await().indefinitely();
 
-        List<Mission> fromCache = missionRepository.getByResponderId("responder123");
+        List<Mission> fromCache = missionRepository.getByResponderId("responder123").await().indefinitely();
 
         assertThat(fromCache.size(), equalTo(1));
         Mission missionFromCache = fromCache.get(0);

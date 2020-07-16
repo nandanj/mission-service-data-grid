@@ -77,7 +77,8 @@ public class ResponderUpdateLocationSourceTest {
                 "\"steps\":[],\"status\":\"CREATED\"}";
         Mission mission = Json.decodeValue(m, Mission.class);
 
-        when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Optional.of(mission));
+        when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Uni.createFrom().item(() -> Optional.of(mission)));
+        when(repository.add(any(Mission.class))).thenReturn(Uni.createFrom().nullItem());
 
         Uni<CompletionStage<Void>> uni = source.process(toRecord("incident12364", payload));
         uni.await().indefinitely();
@@ -116,8 +117,9 @@ public class ResponderUpdateLocationSourceTest {
                 "\"steps\":[],\"status\":\"CREATED\"}";
         Mission mission = Json.decodeValue(m, Mission.class);
 
-        when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Optional.of(mission));
+        when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Uni.createFrom().item(() -> Optional.of(mission)));
         when(eventSink.missionPickedUp(any(Mission.class))).thenReturn(Uni.createFrom().emitter(emitter -> emitter.complete(null)));
+        when(repository.add(any(Mission.class))).thenReturn(Uni.createFrom().nullItem());
 
         Uni<CompletionStage<Void>> uni = source.process(toRecord("incident12364", payload));
         uni.await().indefinitely();
@@ -156,10 +158,11 @@ public class ResponderUpdateLocationSourceTest {
                 "\"steps\":[],\"status\":\"CREATED\"}";
         Mission mission = Json.decodeValue(m, Mission.class);
 
-        when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Optional.of(mission));
+        when(repository.get("5d9b2d3a-136f-414f-96ba-1b2a445fee5d:64")).thenReturn(Uni.createFrom().item(() -> Optional.of(mission)));
         when(eventSink.missionCompleted(any(Mission.class))).thenReturn(Uni.createFrom().emitter(emitter -> emitter.complete(null)));
         when(eventSink.responderCommand(any(Mission.class), any(BigDecimal.class), any(BigDecimal.class), any(Boolean.class)))
                 .thenReturn(Uni.createFrom().emitter(emitter -> emitter.complete(null)));
+        when(repository.add(any(Mission.class))).thenReturn(Uni.createFrom().nullItem());
 
         Uni<CompletionStage<Void>> uni = source.process(toRecord("incident12364", payload));
         uni.await().indefinitely();

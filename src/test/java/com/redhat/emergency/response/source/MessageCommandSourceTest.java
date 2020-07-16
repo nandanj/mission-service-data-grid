@@ -85,6 +85,7 @@ public class MessageCommandSourceTest {
         when(routePlanner.getDirections(any(Location.class), any(Location.class), any(Location.class)))
                 .thenReturn(Arrays.asList(missionStep1, missionStep2));
         when(eventSink.missionStarted(any(Mission.class))).thenReturn(Uni.createFrom().emitter(emitter -> emitter.complete(null)));
+        when(repository.add(any(Mission.class))).thenReturn(Uni.createFrom().nullItem());
 
         Uni<CompletionStage<Void>> uni = missionCommandSource.process(toRecord("incident123", payload));
         uni.await().indefinitely();

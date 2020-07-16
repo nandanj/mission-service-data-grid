@@ -45,7 +45,7 @@ public class MissionCommandSource {
                 .onItem().apply(o -> o.flatMap(j -> validate(j.getJsonObject("body"))).orElseThrow(() -> new IllegalStateException("Message ignored")))
                 .onItem().apply(m -> m.status(MissionStatus.CREATED))
                 .onItem().apply(this::addRoute)
-                .onItem().apply(this::addToRepository)
+                .onItem().produceUni(this::addToRepository)
                 .onItem().produceUni(this::publishMissionStartedEventAsync)
                 .onItem().apply(m -> missionCommandMessage.ack())
                 .onFailure().recoverWithItem(t -> missionCommandMessage.ack());
@@ -56,9 +56,8 @@ public class MissionCommandSource {
         return mission;
     }
 
-    private Mission addToRepository(Mission mission) {
-        repository.add(mission);
-        return mission;
+    private Uni<Mission> addToRepository(Mission mission) {
+        return repository.add(mission).map(v -> mission);
     }
 
     private Uni<Mission> publishMissionStartedEventAsync(Mission mission) {

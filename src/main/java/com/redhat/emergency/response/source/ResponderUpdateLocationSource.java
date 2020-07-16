@@ -2,7 +2,6 @@ package com.redhat.emergency.response.source;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -43,21 +42,19 @@ public class ResponderUpdateLocationSource {
     }
 
     private Uni<Void> processLocationUpdate(JsonObject locationUpdate) {
-        Optional<Mission> mission = repository.get(getKey(locationUpdate));
-        if (mission.isPresent()) {
-            ResponderLocationHistory rlh = new ResponderLocationHistory(BigDecimal.valueOf(locationUpdate.getDouble("lat")),
-                    BigDecimal.valueOf(locationUpdate.getDouble("lon")), Instant.now().toEpochMilli());
-            mission.get().getResponderLocationHistory().add(rlh);
-            return emitMissionEvent(locationUpdate.getString("status"), mission.get())
-                    .onItem().produceUni(m -> emitUpdateResponderCommand(m, locationUpdate))
-                    .onItem().produceUni(m -> {
-                        repository.add(m);
-                        return Uni.createFrom().nullItem();
-                    });
-        } else {
-            log.warn("Mission with key = " + getKey(locationUpdate) + " not found in the repository.");
-            return Uni.createFrom().item(null);
-        }
+        return repository.get(getKey(locationUpdate)).flatMap(mission -> {
+            if (mission.isPresent()) {
+                ResponderLocationHistory rlh = new ResponderLocationHistory(BigDecimal.valueOf(locationUpdate.getDouble("lat")),
+                        BigDecimal.valueOf(locationUpdate.getDouble("lon")), Instant.now().toEpochMilli());
+                mission.get().getResponderLocationHistory().add(rlh);
+                return emitMissionEvent(locationUpdate.getString("status"), mission.get())
+                        .onItem().produceUni(m -> emitUpdateResponderCommand(m, locationUpdate))
+                        .onItem().produceUni(m -> repository.add(m));
+            } else {
+                log.warn("Mission with key = " + getKey(locationUpdate) + " not found in the repository.");
+                return Uni.createFrom().item(null);
+            }
+        });
     }
 
     private Uni<Mission> emitMissionEvent(String status, Mission mission) {

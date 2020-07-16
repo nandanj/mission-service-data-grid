@@ -19,6 +19,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +48,7 @@ public class RestApiTest {
                 "\"steps\":[],\"status\":\"CREATED\"}";
         Mission mission2 = Json.decodeValue(m2, Mission.class);
 
-        when(repository.getAll()).thenReturn(Arrays.asList(mission1, mission2));
+        when(repository.getAll()).thenReturn(Uni.createFrom().item(() -> Arrays.asList(mission1, mission2)));
 
         String response = RestAssured.get("/api/missions").then()
                 .assertThat()
@@ -66,6 +67,8 @@ public class RestApiTest {
 
     @Test
     void testClear() {
+
+        when(repository.clear()).thenReturn(Uni.createFrom().nullItem());
 
         RestAssured.given().header(new Header("Accept", "application/json")).post("/api/missions/clear").then()
                 .assertThat()
@@ -96,7 +99,7 @@ public class RestApiTest {
                 "\"steps\":[],\"status\":\"CREATED\"}";
         Mission mission2 = Json.decodeValue(m2, Mission.class);
 
-        when(repository.getByResponderId("64")).thenReturn(Arrays.asList(mission1, mission2));
+        when(repository.getByResponderId("64")).thenReturn(Uni.createFrom().item(() -> Arrays.asList(mission1, mission2)));
 
         RestAssured.given().header(new Header("Accept", "application/json")).get("/api/missions/responders/64").then()
                 .assertThat()
@@ -126,7 +129,7 @@ public class RestApiTest {
                 "\"steps\":[],\"status\":\"COMPLETED\"}";
         Mission mission2 = Json.decodeValue(m2, Mission.class);
 
-        when(repository.getByResponderId("64")).thenReturn(Arrays.asList(mission1, mission2));
+        when(repository.getByResponderId("64")).thenReturn(Uni.createFrom().item(() -> Arrays.asList(mission1, mission2)));
 
         RestAssured.given().header(new Header("Accept", "application/json")).get("/api/missions/responders/64").then()
                 .assertThat()
@@ -138,7 +141,7 @@ public class RestApiTest {
     @Test
     void missionByResponderNoMission() {
 
-        when(repository.getByResponderId("64")).thenReturn(Collections.emptyList());
+        when(repository.getByResponderId("64")).thenReturn(Uni.createFrom().item(Collections::emptyList));
 
         RestAssured.given().header(new Header("Accept", "application/json")).get("/api/missions/responders/64").then()
                 .assertThat()

@@ -10,6 +10,8 @@ import javax.inject.Inject;
 
 import com.redhat.emergency.response.model.Mission;
 import io.quarkus.runtime.StartupEvent;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -42,12 +44,15 @@ public class MissionRepository {
         }
     }
 
-    public void add(Mission mission) {
-        getCache().put(mission.getKey(), mission.toJson());
+    public Uni<Void> add(Mission mission) {
+        return Uni.createFrom().<Void>item(() -> {
+            getCache().put(mission.getKey(), mission.toJson());
+            return null;
+        }).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 
-    public Optional<Mission> get(String key) {
-        return Optional.ofNullable(getCache().get(key)).map(s -> {
+    public Uni<Optional<Mission>> get(String key) {
+        return Uni.createFrom().item(() -> Optional.ofNullable(getCache().get(key)).map(s -> {
             Mission mission = null;
             try {
                 mission = Json.decodeValue(s, Mission.class);
@@ -55,11 +60,30 @@ public class MissionRepository {
                 log.error("Exception decoding mission with id = " + key, e);
             }
             return mission;
+        }));
+    }
+
+    public Uni<List<Mission>> getAll() {
+        return Uni.createFrom().item(() -> getCache().values().stream().map(s -> {
+            Mission mission = null;
+            try {
+                mission = Json.decodeValue(s, Mission.class);
+            } catch (DecodeException e) {
+                log.error("Exception decoding mission", e);
+            }
+            return mission;
+        }).filter(Objects::nonNull).collect(Collectors.toList()));
+    }
+
+    public Uni<Void> clear() {
+        return Uni.createFrom().item(() -> {
+            getCache().clear();
+            return null;
         });
     }
 
-    public List<Mission> getAll() {
-        return getCache().values().stream().map(s -> {
+    public Uni<List<Mission>> getByResponderId(String responderId) {
+        return Uni.createFrom().item(() -> getCache().values().stream().map(s -> {
             Mission mission = null;
             try {
                 mission = Json.decodeValue(s, Mission.class);
@@ -67,23 +91,8 @@ public class MissionRepository {
                 log.error("Exception decoding mission", e);
             }
             return mission;
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-    }
+        }).filter(Objects::nonNull).filter(m -> m.getResponderId().equals(responderId)).collect(Collectors.toList()));
 
-    public void clear() {
-        getCache().clear();
-    }
-
-    public List<Mission> getByResponderId(String responderId) {
-        return getCache().values().stream().map(s -> {
-            Mission mission = null;
-            try {
-                mission = Json.decodeValue(s, Mission.class);
-            } catch (DecodeException e) {
-                log.error("Exception decoding mission", e);
-            }
-            return mission;
-        }).filter(Objects::nonNull).filter(m -> m.getResponderId().equals(responderId)).collect(Collectors.toList());
     }
 
     private RemoteCache<String, String> getCache() {
