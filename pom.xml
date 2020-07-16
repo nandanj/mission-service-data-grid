@@ -20,6 +20,9 @@
     <commons-lang.version>3.9</commons-lang.version>
     <smallrye.version>2.0.4</smallrye.version>
     <json-unit.version>2.18.0</json-unit.version>
+    <skipTests>false</skipTests>
+    <skipITs>${skipTests}</skipITs>
+    <skipUTs>${skipTests}</skipUTs>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -111,7 +114,25 @@
           <systemPropertyVariables>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
           </systemPropertyVariables>
+          <skipTests>${skipUTs}</skipTests>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <configuration>
+              <systemPropertyVariables>
+                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+              </systemPropertyVariables>
+              <skipTests>${skipITs}</skipTests>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
