@@ -6,7 +6,9 @@
   <artifactId>mission-service-quarkus</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <properties>
+    <commons-lang.version>3.9</commons-lang.version>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
+    <json-unit.version>2.18.0</json-unit.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
@@ -16,13 +18,11 @@
     <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
     <quarkus.platform.version>1.5.2.Final</quarkus.platform.version>
-    <surefire-plugin.version>2.22.1</surefire-plugin.version>
-    <commons-lang.version>3.9</commons-lang.version>
-    <smallrye.version>2.0.4</smallrye.version>
-    <json-unit.version>2.18.0</json-unit.version>
-    <skipTests>false</skipTests>
     <skipITs>${skipTests}</skipITs>
+    <skipTests>false</skipTests>
     <skipUTs>${skipTests}</skipUTs>
+    <smallrye.version>2.0.4</smallrye.version>
+    <surefire-plugin.version>2.22.1</surefire-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -87,6 +87,10 @@
       <artifactId>json-unit</artifactId>
       <version>${json-unit.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-infinispan-client</artifactId>
     </dependency>
   </dependencies>
   <build>
